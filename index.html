@@ -1,0 +1,194 @@
+<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>AuraScreen</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d0d1f"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:radial-gradient(circle at 30% 10%,#2a2a52,#0d0d1f 70%);color:#eef;font-family:system-ui,sans-serif;min-height:100%}
+.in{background:rgba(255,255,255,.12);border-radius:10px;padding:6px 8px;width:100%;color:inherit}.in option{color:#111}
+.chip{padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px}.chip.on{background:#fff;color:#111}
+.sq{animation:sq .6s}.jp{animation:jp .6s}.fl{animation:fl .3s infinite alternate;transform-box:fill-box;transform-origin:50% 100%}.smk{animation:smk 1.6s forwards}.lid{animation:lid .8s forwards;transform-box:fill-box}.wob{animation:wob 1.4s infinite}.float{animation:flt 3s ease-in-out infinite}.pop{animation:pop .5s}.zz{position:absolute;right:-8px;top:-6px;font:700 10px sans-serif;color:#fff;animation:zz 2s infinite}
+@keyframes sq{0%{transform:scale(1)}30%{transform:scale(1.2,.8)}60%{transform:scale(.9,1.15)}100%{transform:scale(1)}}
+@keyframes jp{0%{transform:translateY(0)}40%{transform:translateY(-40px) rotate(-15deg)}100%{transform:translateY(0)}}
+@keyframes fl{to{transform:scale(.85,1.15)}}@keyframes smk{to{transform:translateY(-30px) scale(2);opacity:0}}
+@keyframes lid{to{transform:translate(20px,-70px) rotate(35deg);opacity:0}}@keyframes wob{25%{transform:rotate(-8deg)}75%{transform:rotate(8deg)}}
+@keyframes flt{50%{transform:translateY(-6px)}}@keyframes pop{0%{transform:scale(0)}100%{transform:scale(1)}}
+@keyframes zz{0%{opacity:0;transform:translate(0,6px)}50%{opacity:1}100%{opacity:0;transform:translate(8px,-16px)}}
+@keyframes sw{to{transform:rotate(8deg)}}@keyframes bl{to{opacity:.25}}
+.key{background:linear-gradient(#fff,#cfd6df);border-radius:10px;padding:6px 0;font-weight:700;box-shadow:0 3px 0 #8a94a3,0 4px 6px rgba(0,0,0,.2);color:#223}.key:active{transform:translateY(2px)}
+</style></head><body><div id="r"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useId}=React;
+const rd=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+let MUTE=false,AC,BOOM=()=>{};
+const snd=(n,t='sine',v=.07)=>{if(MUTE)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();n.forEach(([f,d,s=0])=>{const o=AC.createOscillator(),g=AC.createGain(),T=AC.currentTime+s;o.type=t;o.frequency.value=f;o.connect(g);g.connect(AC.destination);g.gain.setValueAtTime(v,T);g.gain.exponentialRampToValueAtTime(.001,T+d);o.start(T);o.stop(T+d)})}catch(e){}};
+const boom=(e,k)=>{const s=e.currentTarget.closest('.scr').getBoundingClientRect(),b=e.currentTarget.getBoundingClientRect(),z=300/s.width;BOOM((b.left-s.left+b.width/2)*z,(b.top-s.top+b.height/3)*z,k)};
+const PAL=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff6bcb'];
+const ACC={
+umbrella:{n:'Guarda-chuva',s:'dome',a:'#ff6b81',b:'#ffd1dc'},umbT:{n:'Guarda-chuva transp.',s:'dome',a:'#bfe9ff',b:'#ffffff'},raincoat:{n:'Capa de chuva',s:'hood',a:'#ff9f1c',b:'#ffd23f'},
+shades:{n:'Óculos escuros',s:'glasses',a:'#2b2d42',b:'#8d99ae'},beach:{n:'Chapéu de praia',s:'brim',a:'#f9d77e',b:'#ff7b54'},visor:{n:'Viseira',s:'visor',a:'#4ecdc4',b:'#fff'},
+beanie:{n:'Gorro de lã',s:'beanie',a:'#5dade2',b:'#fff'},scarf:{n:'Cachecol',s:'scarf',a:'#e74c3c',b:'#f5b7b1'},muffs:{n:'Protetor de orelha',s:'muffs',a:'#ff9ff3',b:'#6c5ce7'},
+nightcap:{n:'Touca de dormir',s:'beanie',a:'#6c63ff',b:'#ffe66d',z:1},voted:{n:'Eu Votei',s:'badge',a:'#2ecc71',b:'#f1c40f',e:'🗳️'},civic:{n:'Chapéu cívico',s:'brim',a:'#27ae60',b:'#f1c40f',e:'🇧🇷'},
+bunny:{n:'Orelhas de coelho',s:'ears',a:'#fff',b:'#ffb3c7'},party:{n:'Chapéu de festa',s:'cone',a:'#ff6bcb',b:'#ffe66d'},santa:{n:'Gorro de Papai Noel',s:'beanie',a:'#e63946',b:'#fff'},
+antlers:{n:'Chifres de rena',s:'antlers',a:'#8d5a3b',b:'#e63946'},straw:{n:'Chapéu de palha',s:'brim',a:'#e9c46a',b:'#c0392b'},stache:{n:'Bigode',s:'stache',a:'#3b2412',b:'#000'},
+witch:{n:'Chapéu de bruxa',s:'witch',a:'#3d2b56',b:'#ff9f1c'},pumpkin:{n:'Abóbora',s:'blob',a:'#ff8c1a',b:'#2d6a4f',e:'🎃'},ghost:{n:'Fantasminha',s:'hood',a:'#fff',b:'#cfd8dc',e:'👀'}};
+const THEMES={
+rain:{n:'Chuva',ic:'🌧️',t:19,bg:['#5f7a99','#8aa0b8','#c4d0dc'],p:'rain',acc:['umbrella','umbT','raincoat'],deco:'☁️'},
+sun:{n:'Sol',ic:'☀️',t:31,bg:['#38b6ff','#8fd8ff','#ffe9a8'],p:'sun',acc:['shades','beach','visor'],deco:'☀️'},
+snow:{n:'Frio / Neve',ic:'❄️',t:4,bg:['#1d3557','#6c8ebf','#dbe9f5'],p:'snow',acc:['beanie','scarf','muffs']},
+night:{n:'Noite',ic:'🌙',t:17,bg:['#0b1033','#1b2a6b','#3b3f8f'],p:['star','fly'],acc:['nightcap'],deco:'🌙'},
+elei:{n:'Eleições',ic:'🗳️',bg:['#009c3b','#2a9d5c','#002776'],p:'flag',acc:['voted','civic'],egg:'urna',deco:'🇧🇷'},
+pasc:{n:'Páscoa',ic:'🐰',bg:['#ffd6e8','#d4f1c5','#fff3b0'],p:'petal',acc:['bunny'],egg:'ovo'},
+aniv:{n:'Aniversário',ic:'🎂',bg:['#ff9ad5','#a29bfe','#ffeaa7'],p:'balloon',acc:['party'],egg:'bolo'},
+natal:{n:'Natal',ic:'🎄',t:22,bg:['#0b3d2e','#14532d','#7f1d1d'],p:'snow',acc:['santa','antlers'],egg:'gift',str:'light',deco:'🎄'},
+juni:{n:'Festa Junina',ic:'🔥',bg:['#2b1055','#7f3f98','#f6a04d'],p:['fly','flag'],acc:['straw','stache'],egg:'fire',str:'flag'},
+hall:{n:'Halloween',ic:'🎃',bg:['#2d0a4e','#6b2d8c','#ff7a18'],p:'bat',acc:['witch','pumpkin','ghost'],egg:'abob',deco:'🌕'}};
+const APPS=[['Fotos','🖼️','#ff9a9e','#fecfef'],['Câmera','📷','#a1c4fd','#c2e9fb'],['Música','🎵','#f6d365','#fda085'],['Mapas','🗺️','#84fab0','#8fd3f4'],['Mensagens','💬','#96e6a1','#d4fc79'],['Clima','⛅','#89f7fe','#66a6ff'],['Relógio','⏰','#fbc2eb','#a6c1ee'],['Notas','📝','#ffecd2','#fcb69f'],['Loja','🛍️','#c3cfe2','#f5f7fa'],['Jogos','🎮','#d299c2','#fef9d7'],['Agenda','📅','#ff9a9e','#fad0c4'],['Ajustes','⚙️','#cfd9df','#e2ebf0']];
+const DOCK=[['Telefone','📞','#7ee8a0','#38b66b'],['Web','🧭','#7cc4ff','#3b82f6'],['Email','✉️','#ffd479','#ff9f1c'],['Chat','🤖','#d0a2ff','#8b5cf6']];
+const CITIES=[{n:'São Paulo',r:'Sudeste',w:'rain'},{n:'Rio de Janeiro',r:'Sudeste',w:'sun'},{n:'Curitiba',r:'Sul',w:'snow'},{n:'Capelinha',r:'Sudeste',w:'sun'},{n:'Recife',r:'Nordeste',w:'sun'},{n:'Manaus',r:'Norte',w:'rain'},{n:'Brasília',r:'Centro-Oeste',w:'sun'}];
+const REG=['Brasil','Norte','Nordeste','Centro-Oeste','Sudeste','Sul'];
+const PL={rain:'Gotas',snow:'Neve',heart:'Corações',star:'Estrelas',leaf:'Folhas',coin:'Moedas',petal:'Pétalas',balloon:'Balões',flag:'Confetes'};
+const SH={cone:'Chapéu',crown:'Coroa',ears:'Orelhas',glasses:'Óculos',hood:'Capa'};
+const easter=y=>{const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451);return[Math.floor((h+l-7*m+114)/31),(h+l-7*m+114)%31+1]};
+function resolve(ds,h,C,bd,cT,wx,ev){const[y,m,d]=ds.split('-').map(Number),md=ds.slice(5);const hit=f=>ev.some(e=>e.md===md&&(e.yr||e.y===y)&&f(e.s));
+const c=cT.find(t=>hit(s=>s.toLowerCase().includes(t.n.toLowerCase()))||t.date===md&&(!t.r||t.r==='Brasil'||t.r===C.r));if(c)return c.k;if(bd===md||hit(s=>/anivers|niver|birthday/i.test(s)))return'aniv';
+const[em,ed]=easter(y);if(Math.abs(new Date(y,m-1,d)-new Date(y,em-1,ed))<=3*864e5)return'pasc';
+if(m===12&&d>=20&&d<=26)return'natal';if(m===10&&d===31)return'hall';if(m===6&&d>=12&&d<=24)return'juni';if(m===10&&d<=7)return'elei';
+return wx?(wx.w==='rain'||wx.w==='snow'?wx.w:wx.day?wx.w:'night'):(h<6||h>=19?'night':C.w)}
+const POS={glasses:{top:8},stache:{top:28},scarf:{top:36},badge:{top:-10,right:-12,width:34,height:34}};
+function Acc({d,jump}){const u='g'+useId().replace(/\W/g,''),F=`url(#${u})`,{a='#ff6bcb',b='#ffe66d',e,z,s}=d;
+const S={cone:<><path d="M32 2L52 42H12Z" fill={F}/><circle cx="32" cy="4" r="4" fill={b}/></>,
+beanie:<><path d="M10 42Q10 6 32 6Q54 6 54 42Z" fill={F}/><rect x="8" y="34" width="48" height="10" rx="5" fill={b}/><circle cx="32" cy="5" r="6" fill={b}/></>,
+witch:<><ellipse cx="32" cy="42" rx="28" ry="5" fill={F}/><path d="M20 42Q26 20 30 2Q38 12 44 42Z" fill={F}/><rect x="21" y="34" width="22" height="5" fill={b}/></>,
+hood:<path d="M10 44Q8 6 32 4Q56 6 54 44Q44 32 32 34Q20 32 10 44Z" fill={F}/>,
+dome:<><path d="M4 30Q32-12 60 30Q52 24 46 30Q39 24 32 30Q25 24 18 30Q10 24 4 30Z" fill={F}/><path d="M32 8V46" stroke={b} strokeWidth="3" strokeLinecap="round"/></>,
+brim:<><ellipse cx="32" cy="38" rx="31" ry="7" fill={F}/><path d="M16 38Q16 10 32 10Q48 10 48 38Z" fill={F}/><rect x="16" y="30" width="32" height="6" fill={b}/></>,
+visor:<><path d="M12 40Q32 10 52 40Z" fill={F}/><path d="M6 42Q32 34 58 42Q32 50 6 42Z" fill={b}/></>,
+ears:<><ellipse cx="22" cy="20" rx="7" ry="18" fill={F}/><ellipse cx="22" cy="22" rx="3.5" ry="12" fill={b}/><ellipse cx="42" cy="20" rx="7" ry="18" fill={F}/><ellipse cx="42" cy="22" rx="3.5" ry="12" fill={b}/></>,
+antlers:<><path d="M22 44Q18 20 12 8M18 24L8 22M42 44Q46 20 52 8M46 24L56 22" stroke={a} strokeWidth="4" fill="none" strokeLinecap="round"/><circle cx="12" cy="8" r="4" fill={b}/><circle cx="52" cy="8" r="4" fill={b}/></>,
+crown:<><path d="M10 42L8 12L22 26L32 6L42 26L56 12L54 42Z" fill={F}/><circle cx="32" cy="14" r="3.5" fill={b}/></>,
+muffs:<><path d="M12 40Q32-4 52 40" stroke={b} strokeWidth="4" fill="none"/><circle cx="12" cy="38" r="9" fill={F}/><circle cx="52" cy="38" r="9" fill={F}/></>,
+blob:<><ellipse cx="32" cy="30" rx="22" ry="16" fill={F}/><path d="M30 14Q32 4 38 4" stroke={b} strokeWidth="4" fill="none"/></>,
+glasses:<><rect x="4" y="12" width="26" height="18" rx="8" fill={F}/><rect x="34" y="12" width="26" height="18" rx="8" fill={F}/><path d="M30 18H34" stroke={a} strokeWidth="3"/><path d="M9 16L16 16" stroke="#fff" strokeWidth="3" opacity=".5"/></>,
+stache:<path d="M32 14Q22 4 6 16Q18 22 32 18Q46 22 58 16Q42 4 32 14Z" fill={F}/>,
+scarf:<><rect x="2" y="8" width="60" height="14" rx="7" fill={F}/><rect x="40" y="14" width="12" height="28" rx="5" fill={b}/></>,
+badge:<><circle cx="32" cy="24" r="18" fill={F}/><circle cx="32" cy="24" r="18" fill="none" stroke={b} strokeWidth="3"/></>}[s];
+const base=POS[s]||{top:-30,left:'50%',marginLeft:-32};
+return <div className="absolute pointer-events-none" style={base}><svg viewBox="0 0 64 48" width={base.width||64} height={base.height||48} className={jump?'jp':''} style={{filter:'drop-shadow(0 3px 2px rgba(0,0,0,.35))',overflow:'visible'}}>
+<defs><linearGradient id={u} x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor={b}/><stop offset="1" stopColor={a}/></linearGradient></defs>{S}
+{!['glasses','stache','scarf','badge','ears'].includes(s)&&<ellipse cx="24" cy="18" rx="8" ry="3" fill="#fff" opacity=".35" transform="rotate(-20 24 18)"/>}
+{e&&<text x="32" y={s==='badge'?30:28} textAnchor="middle" fontSize="15">{e}</text>}</svg>{z&&<span className="zz">Zzz</span>}</div>}
+const CFG={rain:[110,9,14,0,0],snow:[55,.6,1.6,13,1],leaf:[28,.8,1.8,16,1.2],heart:[26,.8,1.6,16,1],coin:[26,1.5,3,15,.5],petal:[30,.7,1.4,14,1],star:[45,0,0,11,0],balloon:[14,-1.2,-.5,26,.5],bat:[10,-.2,.2,20,3],fly:[24,-.3,.3,10,1],flag:[26,.8,1.6,14,1.2],sun:[28,-.3,-.1,9,.6]};
+const EM={snow:'❄️',leaf:'🍂',heart:'💗',coin:'🪙',petal:'🌸',star:'✨',balloon:'🎈',bat:'🦇',fly:'✨',flag:'🎊',sun:'✨'};
+function Sky({p}){const r=useRef();
+useEffect(()=>{const c=r.current,x=c.getContext('2d'),W=300,H=620;let ps=[],bs=[],m={x:-99,y:-99},raf;
+[].concat(p).forEach(t=>{const[n,v0,v1,sz,sw]=CFG[t]||CFG.snow;for(let i=0;i<n;i++)ps.push({t,x:Math.random()*W,y:Math.random()*H,v:v0+Math.random()*(v1-v0),sz,sw,ph:Math.random()*6,s:.7+Math.random()*.6})});
+const mv=e=>{const q=c.getBoundingClientRect();m={x:(e.clientX-q.left)*300/q.width,y:(e.clientY-q.top)*620/q.height}};window.addEventListener('pointermove',mv);
+BOOM=(bx,by,k)=>{const nb=k==='fire'?3:1;for(let j=0;j<nb;j++){const cx=k==='fire'?bx+(Math.random()-.5)*120:bx,cy=k==='fire'?by-Math.random()*120:by;for(let i=0;i<(k==='fire'?36:k==='spark'?18:60);i++){const a=Math.random()*6.28,sp=k==='fire'?2+Math.random()*3:k==='spark'?1+Math.random()*3:2+Math.random()*6;bs.push({x:cx,y:cy,vx:Math.cos(a)*sp,vy:k==='spark'?-Math.random()*4-1:Math.sin(a)*sp-(k==='conf'?4:0),l:1,c:k==='spark'?'#ffb703':k==='fire'?PAL[j%5]:PAL[i%5],g:k==='fire'?.04:.15})}}};
+const lp=()=>{x.clearRect(0,0,W,H);const t=Date.now()/1000;
+ps.forEach(q=>{const dx=q.x-m.x,dy=q.y-m.y,d=Math.hypot(dx,dy);if(d<45&&d>0){q.x+=dx/d*3;q.y+=dy/d*2}
+if(q.t==='star')x.globalAlpha=.4+.6*Math.abs(Math.sin(t*2+q.ph));else{q.y+=q.v;q.x+=Math.sin(t+q.ph)*q.sw*.5;x.globalAlpha=1}
+if(q.y>H+20)q.y=-20;if(q.y<-30)q.y=H+20;if(q.x>W+20)q.x=-20;if(q.x<-20)q.x=W+20;
+if(q.t==='rain'){x.strokeStyle='rgba(210,230,255,.75)';x.lineWidth=1.4;x.beginPath();x.moveTo(q.x,q.y);x.lineTo(q.x-1.5,q.y+12);x.stroke()}else{x.font=q.sz*q.s+'px serif';x.fillText(EM[q.t]||'✨',q.x,q.y)}});
+bs=bs.filter(b=>b.l>0);bs.forEach(b=>{b.x+=b.vx;b.y+=b.vy;b.vy+=b.g;b.l-=.012;x.globalAlpha=Math.max(b.l,0);x.fillStyle=b.c;x.fillRect(b.x,b.y,5,5)});x.globalAlpha=1;raf=requestAnimationFrame(lp)};lp();
+return()=>{cancelAnimationFrame(raf);window.removeEventListener('pointermove',mv)}},[]);
+return <canvas ref={r} width="300" height="620" className="absolute inset-0 pointer-events-none z-10" style={{width:300,height:620}}/>}
+const EC=[['#ff8fab','🐣'],['#8ecae6','🍫'],['#b8f2a8','🐥']];
+function EggOne({c,e,r}){const[n,S]=useState(0),h=n>=5;
+return <div key={n} className="cursor-pointer" style={{transform:`rotate(${r}deg)`,animation:n&&!h?'wob .3s':''}} onClick={ev=>{const v=h?0:n+1;S(v);snd([[300+v*90,.1]],'triangle');if(v===5){snd([[784,.1],[988,.25,.1]]);boom(ev,'conf')}}}>
+{h?<div className="text-4xl pop">{e}</div>:<svg viewBox="0 0 50 64" width="44" style={{filter:'drop-shadow(0 4px 3px rgba(0,0,0,.3))'}}><ellipse cx="25" cy="36" rx="20" ry="26" fill={c}/><path d="M6 38Q25 28 44 38" stroke="#fff" strokeWidth="5" fill="none"/><path d="M8 48Q25 40 42 48" stroke="#ffe66d" strokeWidth="3" fill="none"/><ellipse cx="17" cy="22" rx="5" ry="8" fill="#fff" opacity=".4"/>{n>1&&<path d="M14 24L22 34L28 26L36 38" stroke="#333" strokeWidth="1.5" fill="none"/>}</svg>}</div>}
+function Egg({k}){const[s,S]=useState({on:0,v:''}),[ov,O]=useState(0),[dg,D]=useState(''),[msg,M]=useState('');
+const clk=e=>{const on=!s.on,t=e.currentTarget;
+if(k==='urna'){O(1);D('');M('');snd([[660,.1]]);return}
+if(k==='bolo'){S({on});if(on){snd([[300,.3],[200,.4,.1]],'triangle');boom(e,'fire');setTimeout(()=>boom({currentTarget:t},'fire'),500)}else snd([[523,.15],[659,.15,.15],[784,.3,.3]]);return}
+if(k==='gift'){S({on,v:on?['🧸','🌟','🦄','🍭','🎖️','🐲'][Math.random()*6|0]:''});if(on){snd([[523,.12],[659,.12,.1],[784,.12,.2],[1047,.3,.3]]);boom(e,'conf')}return}
+if(k==='fire'){boom(e,'spark');snd([[120,.05],[90,.06,.05],[140,.04,.12]],'sawtooth',.05);return}
+if(k==='abob'){S({on});if(on)snd([[220,.15],[196,.15,.2],[220,.15,.4],[165,.4,.6]],'sawtooth',.05)}};
+const ok=e=>{if(dg.length<2){M('DIGITE 2 DÍGITOS');return}snd([[1100,1.2]],'square',.04);M('FIM — VOTOU!');const t=e.currentTarget;setTimeout(()=>{boom({currentTarget:t},'conf');O(0)},1400)};
+return <><div className="absolute inset-x-0 flex justify-center items-end gap-3 z-20" style={{bottom:128}}>
+{k==='ovo'?EC.map(([c,e],i)=><EggOne key={i} c={c} e={e} r={i*10-10}/>):<div onClick={clk} className={'relative cursor-pointer '+(k==='gift'?'wob':'float')} style={{filter:k==='abob'&&s.on?'drop-shadow(0 0 16px #ffd60a)':'drop-shadow(0 6px 5px rgba(0,0,0,.35))'}}>
+{k==='urna'&&<svg viewBox="0 0 100 100" width="96"><defs><linearGradient id="ug" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#f1f4f8"/><stop offset="1" stopColor="#a5b0bd"/></linearGradient></defs><rect x="8" y="10" width="84" height="80" rx="14" fill="url(#ug)"/><rect x="16" y="18" width="40" height="26" rx="5" fill="#2e3a46"/><rect x="19" y="21" width="34" height="12" rx="3" fill="#b9e6a8"/>{[0,1,2].map(i=>[0,1,2].map(j=><circle key={i+'-'+j} cx={68+j*8} cy={22+i*8} r="3" fill="#3b4652"/>))}<rect x="16" y="52" width="68" height="14" rx="6" fill="#46d17a"/><text x="50" y="82" textAnchor="middle" fontSize="8" fill="#334">URNA</text></svg>}
+{k==='bolo'&&<svg viewBox="0 0 100 110" width="112"><ellipse cx="50" cy="98" rx="44" ry="8" fill="#d8dee9"/><rect x="12" y="62" width="76" height="34" rx="10" fill="#ff9ec7"/><rect x="12" y="62" width="76" height="12" rx="6" fill="#fff"/><rect x="24" y="38" width="52" height="28" rx="9" fill="#ffd166"/><rect x="24" y="38" width="52" height="10" rx="5" fill="#fff"/>{[34,50,66].map(cx=><g key={cx}><rect x={cx-2} y="22" width="4" height="17" rx="2" fill="#4cc9f0"/>{s.on?<circle className="smk" cx={cx} cy="18" r="4" fill="#bbb"/>:<ellipse className="fl" cx={cx} cy="16" rx="3.5" ry="6" fill="#ffb703"/>}</g>)}</svg>}
+{k==='gift'&&<><svg viewBox="0 0 100 100" width="96"><rect x="14" y="44" width="72" height="48" rx="8" fill="#e63946"/><rect x="44" y="44" width="12" height="48" fill="#ffd166"/><g className={s.on?'lid':''}><rect x="8" y="30" width="84" height="18" rx="7" fill="#ff5d6c"/><rect x="44" y="30" width="12" height="18" fill="#ffd166"/><path d="M50 30Q28 4 40 22M50 30Q72 4 60 22" stroke="#ffd166" strokeWidth="6" fill="none" strokeLinecap="round"/></g></svg>{s.on&&<div className="absolute -top-8 left-1/2 -translate-x-1/2 text-4xl pop">{s.v}</div>}</>}
+{k==='fire'&&<svg viewBox="0 0 100 100" width="96"><rect x="14" y="78" width="72" height="12" rx="6" fill="#6b4226" transform="rotate(-8 50 84)"/><rect x="14" y="78" width="72" height="12" rx="6" fill="#8d5a3b" transform="rotate(8 50 84)"/><path className="fl" d="M50 14Q80 48 66 76Q50 88 34 76Q20 48 50 14Z" fill="#ff7b00"/><path className="fl" d="M50 40Q66 58 58 76Q50 80 42 76Q34 58 50 40Z" fill="#ffd60a"/></svg>}
+{k==='abob'&&<svg viewBox="0 0 100 100" width="96"><ellipse cx="50" cy="60" rx="38" ry="32" fill="#ff8c1a"/><ellipse cx="50" cy="60" rx="18" ry="32" fill="#ffa43d"/><rect x="45" y="20" width="10" height="14" rx="4" fill="#2d6a4f"/><g fill={s.on?'#ffe84d':'#5b2a00'}><path d="M30 52L42 52L36 40Z"/><path d="M58 52L70 52L64 40Z"/><path d="M30 68Q50 92 70 68L62 68L56 76L50 68L44 76L38 68Z"/></g></svg>}
+</div>}</div>
+{ov&&<div className="absolute inset-0 z-40 bg-black/70 grid place-items-center"><div className="w-56 rounded-3xl p-3 shadow-2xl" style={{background:'linear-gradient(#e2e8f0,#94a3b8)',color:'#223'}}>
+<div className="rounded-xl text-center py-2 mb-2 font-mono" style={{background:'#d9f2c9'}}><div className="text-[10px]">{msg||'SEU VOTO PARA'}</div><div className="text-3xl tracking-[.4em]">{dg.padEnd(2,'_')}</div></div>
+<div className="grid grid-cols-3 gap-1.5">{[1,2,3,4,5,6,7,8,9,'',0,''].map((n,i)=>n===''?<span key={i}/>:<button key={i} className="key" onClick={()=>{if(dg.length<2){D(dg+n);snd([[880,.07]],'square',.04)}}}>{n}</button>)}</div>
+<div className="flex gap-1 mt-2 text-[9px]"><button className="key flex-1" onClick={()=>D('')}>BRANCO</button><button className="key flex-1" style={{background:'#ffb36b'}} onClick={()=>{D('');M('')}}>CORRIGE</button><button className="key flex-1" style={{background:'#5be08e'}} onClick={ok}>CONFIRMA</button></div></div></div>}</>}
+const ld=x=>x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+function App(){const I=rd('aura3',{});
+const[mode,setMode]=useState(I.mode||'auto'),[city,setCity]=useState(I.city??3),[date,setDate]=useState(I.date||ld(new Date())),[hour,setHour]=useState(I.hour??12),[key,setKey]=useState(I.key||'sun'),[bday,setBday]=useState(I.bday||''),[mute,setMute]=useState(!!I.mute),[cT,setCT]=useState(I.cT||[]),[cA,setCA]=useState(I.cA||{}),[ov,setOv]=useState(I.ov||{}),[lk,setLk]=useState(I.lk||{}),[seed,setSeed]=useState(0),[sel,setSel]=useState(null),[tab,setTab]=useState(0),[tap,setTap]=useState(''),[toast,setToast]=useState(''),[now,setNow]=useState(new Date());
+const[wx,setWx]=useState(null),[place,setPlace]=useState(I.place||''),[ev,setEv]=useState(I.ev||[]),[ui,setUi]=useState(false),[vw,setVw]=useState([innerWidth,innerHeight]),[gmsg,setGmsg]=useState('');
+const[f,setF]=useState({n:'',r:'Brasil',date:'',c1:'#ff7eb3',c2:'#7afcff',img:'',p:'heart',acc:[]}),[g,setG]=useState({n:'',s:'crown',a:'#ffd166',b:'#ef476f',e:'⭐'});
+useEffect(()=>{MUTE=mute;try{localStorage.setItem('aura3',JSON.stringify({mode,city,date,hour,key,bday,mute,cT,cA,ov,lk,place,ev}))}catch(e){}},[mode,city,date,hour,key,bday,mute,cT,cA,ov,lk,place,ev]);
+useEffect(()=>{const i=setInterval(()=>setNow(new Date()),30000);return()=>clearInterval(i)},[]);
+const locate=()=>{setGmsg('Buscando localização…');navigator.geolocation?navigator.geolocation.getCurrentPosition(async p=>{const{latitude:la,longitude:lo}=p.coords;try{const r=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${la}&longitude=${lo}&current=temperature_2m,weather_code,is_day`)).json(),c=r.current,k=c.weather_code,w=(k>=51&&k<=67)||(k>=80&&k<=82)||k>=95?'rain':(k>=71&&k<=77)||k===85||k===86||c.temperature_2m<=10?'snow':'sun';setWx({w,t:Math.round(c.temperature_2m),day:!!c.is_day});setGmsg('Clima real ativo ✓')}catch(e){setGmsg('Clima indisponível (sem internet?): usando simulação')}try{const r=await(await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${la}&longitude=${lo}&localityLanguage=pt`)).json();setPlace(r.city||r.locality||'Sua localização')}catch(e){setPlace('Sua localização')}},()=>setGmsg('Permissão de localização negada'),{timeout:15000}):setGmsg('Geolocalização indisponível')};
+useEffect(()=>{if(mode==='auto'){locate();const i=setInterval(locate,9e5);return()=>clearInterval(i)}},[mode]);
+useEffect(()=>{const f=()=>setVw([innerWidth,innerHeight]);addEventListener('resize',f);return()=>removeEventListener('resize',f)},[]);
+const mob=vw[0]<700,sc=mob?Math.min(vw[0]/300,vw[1]/620):1;
+const impIcs=fl=>{const rr=new FileReader();rr.onload=()=>{const out=[];String(rr.result).split('BEGIN:VEVENT').slice(1).forEach(b=>{const d=b.match(/DTSTART[^:]*:(\d{4})(\d{2})(\d{2})/)||[],t=(b.match(/SUMMARY[^:]*:(.*)/)||[])[1];if(d[1]&&t)out.push({y:+d[1],md:d[2]+'-'+d[3],s:t.trim(),yr:/FREQ=YEARLY/.test(b)})});setEv(out.slice(0,2000));setGmsg(out.length+' eventos importados')};rr.readAsText(fl)};
+const C=CITIES[city],TH={...THEMES,...Object.fromEntries(cT.map(t=>[t.k,t]))},ACCS={...ACC,...cA};
+const tk=mode==='manual'&&TH[key]?key:resolve(mode==='auto'?ld(now):date,mode==='auto'?now.getHours():hour,C,bday,cT,mode==='auto'?wx:null,ev),T=TH[tk]||THEMES.sun;
+const list=(ov[tk]||T.acc).filter(i=>ACCS[i]);
+const hh=mode==='auto'?now.toTimeString().slice(0,5):String(hour).padStart(2,'0')+':00';
+const bg=T.img?`linear-gradient(#0003,#0003),url("${T.img}") center/cover`:`linear-gradient(180deg,${T.bg[0]},${T.bg[1]} 55%,${T.bg[2]||T.bg[1]})`;
+const ic=(a,i,dock)=>{const id=a[0],lock=lk[id],ac=lock?ACCS[lock]:list.length?ACCS[list[Math.floor((Math.abs(Math.sin((i+1)*12.9898+seed*78.233)*43758.5)%1)*list.length)]]:null;
+return <button key={id} className="flex flex-col items-center gap-1 w-[64px] outline-none" onClick={()=>{setSel(id);setTap(id);snd([[520,.08]],'triangle');setToast('Abrindo '+id+'…');setTimeout(()=>setTap(''),650);setTimeout(()=>setToast(''),1400)}}>
+<div className={'relative '+(tap===id?'sq':'')} style={{width:58,height:58}}><div className="absolute inset-0 rounded-[20px] grid place-items-center text-[26px]" style={{background:`linear-gradient(145deg,${a[2]},${a[3]})`,boxShadow:'inset 0 3px 5px rgba(255,255,255,.8),inset 0 -6px 9px rgba(0,0,0,.15),0 8px 12px rgba(0,0,0,.28)',outline:sel===id?'2px solid #fff':'none'}}><span style={{filter:'drop-shadow(0 2px 1px rgba(0,0,0,.25))'}}>{a[1]}</span><i className="absolute top-1 left-2 w-5 h-2 rounded-full bg-white/50" style={{transform:'rotate(-20deg)'}}/></div>
+{ac&&<Acc d={ac} jump={tap===id}/>}{lock&&<b className="absolute -bottom-1 -right-1 text-[10px]">📌</b>}</div>{!dock&&<span className="text-[10px] text-white" style={{textShadow:'0 1px 2px #0008'}}>{id}</span>}</button>};
+const tg=(arr,i)=>arr.includes(i)?arr.filter(x=>x!==i):[...arr,i];
+const mkT=()=>{if(!f.n.trim())return;const k='c'+Date.now();setCT([...cT,{k,n:f.n,ic:'✨',r:f.r,date:f.date?f.date.slice(5):'',bg:[f.c1,f.c2],p:f.p,acc:f.acc.length?f.acc:['party'],img:f.img}]);setKey(k);setMode('manual')};
+const mkA=()=>{const id='u'+Date.now();setCA({...cA,[id]:{...g,n:g.n||'Meu acessório'}});setOv({...ov,[tk]:[...(ov[tk]||T.acc),id]})};
+const Lb=({t,children})=><label className="block text-xs opacity-80 mt-2">{t}{children}</label>;
+return <main className={'flex flex-wrap gap-6 items-start justify-center '+(mob?'':'p-4 md:p-8')}>
+<div className={'relative shrink-0 '+(mob?'':'rounded-[46px] p-[14px]')} style={mob?{zoom:sc,margin:'0 auto'}:{background:'#171717',boxShadow:'0 30px 60px rgba(0,0,0,.5),inset 0 0 0 2px #444'}}>
+<div className="scr relative overflow-hidden rounded-[34px]" style={{width:300,height:620,background:bg,borderRadius:mob?0:34}}>
+<Sky key={tk+JSON.stringify(T.p)} p={T.p}/>
+{T.deco&&<div className="absolute top-12 right-4 text-5xl float">{T.deco}</div>}
+{T.str&&<div className="absolute top-8 inset-x-0 flex justify-between px-1 z-10 pointer-events-none">{Array.from({length:12},(_,i)=>T.str==='flag'?<i key={i} style={{borderLeft:'10px solid transparent',borderRight:'10px solid transparent',borderTop:'18px solid '+PAL[i%5],marginTop:Math.sin(i/11*Math.PI)*12,animation:`sw ${1+i%3*.3}s ease-in-out infinite alternate`}}/>:<i key={i} className="w-2.5 h-2.5 rounded-full" style={{background:PAL[i%5],boxShadow:'0 0 8px '+PAL[i%5],marginTop:Math.sin(i/11*Math.PI)*12,animation:`bl ${.6+i%3*.4}s infinite alternate`}}/>)}</div>}
+<div className="absolute top-0 inset-x-0 h-9 px-5 pt-2 flex justify-between text-[11px] font-semibold text-white z-20" style={{textShadow:'0 1px 3px #0008'}}><span>{hh}</span><span>{T.ic} {mode==='auto'&&wx?wx.t:(T.t??24)}° · {mode==='auto'&&place?place:C.n}</span><span>🔋 82%</span></div>
+<div className="absolute inset-x-0 top-[76px] grid grid-cols-4 gap-y-6 px-3 z-20 justify-items-center">{APPS.map((a,i)=>ic(a,i))}</div>
+{T.egg&&<Egg key={tk} k={T.egg}/>}
+{toast&&<div className="absolute bottom-[112px] inset-x-10 z-30 text-center text-xs text-white rounded-full py-1.5" style={{background:'#0009'}}>{toast}</div>}
+<div className="absolute bottom-3 inset-x-3 h-[84px] rounded-[30px] flex justify-around items-center z-20 pt-2" style={{background:'rgba(255,255,255,.25)',backdropFilter:'blur(10px)'}}>{DOCK.map((a,i)=>ic(a,i+12,1))}</div>
+</div></div>
+<>{mob&&<button onClick={()=>setUi(!ui)} className="fixed z-[60] right-3 bottom-3 w-12 h-12 rounded-full text-xl" style={{background:'rgba(20,20,40,.75)',backdropFilter:'blur(8px)'}}>{ui?'✕':'⚙️'}</button>}<aside className={'w-full max-w-md p-4 text-sm '+(mob?(ui?'fixed inset-0 z-50 overflow-auto':'hidden'):'rounded-3xl')} style={{background:mob?'#12122a':'rgba(255,255,255,.08)',backdropFilter:'blur(12px)'}}>
+<h1 className="text-xl font-bold">✨ AuraScreen <span className="text-xs font-normal opacity-70">Estúdio · {T.ic} {T.n}</span></h1>
+<div className="flex gap-1 my-3">{['Controle','Novo tema','Acessórios'].map((n,i)=><button key={n} className={'chip flex-1 '+(tab===i?'on':'')} onClick={()=>setTab(i)}>{n}</button>)}</div>
+{tab===0&&<div>
+<div className="flex gap-1">{[['auto','Automático'],['data','Data simulada'],['manual','Manual']].map(([m,n])=><button key={m} className={'chip flex-1 '+(mode===m?'on':'')} onClick={()=>setMode(m)}>{n}</button>)}</div>
+<p className="text-xs opacity-60 mt-1">Automático usa data, hora, localização e clima reais (precisa de internet). Sem isso, simula pela cidade abaixo.</p>
+<div className="flex flex-wrap gap-1.5 mt-2"><button className="chip" onClick={locate}>📍 Usar minha localização</button><label className="chip cursor-pointer">📅 Importar calendário (.ics)<input type="file" accept=".ics,text/calendar" className="hidden" onChange={e=>e.target.files[0]&&impIcs(e.target.files[0])}/></label></div>{gmsg&&<p className="text-xs mt-1">{gmsg}</p>}
+<Lb t="Cidade / região"><select className="in" value={city} onChange={e=>setCity(+e.target.value)}>{CITIES.map((c,i)=><option key={i} value={i}>{c.n} — {c.r}</option>)}</select></Lb>
+{mode==='data'&&<><Lb t="Data"><input type="date" className="in" value={date} onChange={e=>e.target.value&&setDate(e.target.value)}/></Lb><Lb t={'Hora: '+hour+'h'}><input type="range" min="0" max="23" className="w-full" value={hour} onChange={e=>setHour(+e.target.value)}/></Lb></>}
+<Lb t="Seu aniversário"><input type="date" className="in" value={bday?'2000-'+bday:''} onChange={e=>setBday(e.target.value.slice(5))}/></Lb>
+<div className="text-xs opacity-80 mt-3">Testar clima ou evento:</div><div className="flex flex-wrap gap-1.5 mt-1">{Object.entries(TH).map(([k,t])=><button key={k} className={'chip '+(mode==='manual'&&key===k?'on':'')} onClick={()=>{setKey(k);setMode('manual')}}>{t.ic} {t.n}</button>)}</div>
+<label className="flex items-center gap-2 mt-3 text-xs"><input type="checkbox" checked={mute} onChange={e=>setMute(e.target.checked)}/> Silenciar sons</label>
+<div className="mt-3 p-2 rounded-xl" style={{background:'rgba(255,255,255,.08)'}}><div className="text-xs">Ícone selecionado: <b>{sel||'toque em um ícone no celular'}</b></div>
+{sel&&<select className="in mt-1" value={lk[sel]||''} onChange={e=>setLk(e.target.value?{...lk,[sel]:e.target.value}:Object.fromEntries(Object.entries(lk).filter(([k])=>k!==sel)))}><option value="">Sem fixação (aleatório)</option>{Object.entries(ACCS).map(([i,a])=><option key={i} value={i}>📌 {a.n}</option>)}</select>}
+<div className="flex gap-2 mt-2"><button className="chip" onClick={()=>setSeed(s=>s+1)}>🎲 Sortear acessórios</button><button className="chip" onClick={()=>setLk({})}>Destravar todos</button></div></div></div>}
+{tab===1&&<div>
+<Lb t="Nome"><input className="in" value={f.n} onChange={e=>setF({...f,n:e.target.value})} placeholder="Ex.: Dia da Praia"/></Lb>
+<div className="grid grid-cols-2 gap-2"><Lb t="Região"><select className="in" value={f.r} onChange={e=>setF({...f,r:e.target.value})}>{REG.map(r=><option key={r}>{r}</option>)}</select></Lb><Lb t="Data (anual)"><input type="date" className="in" value={f.date} onChange={e=>setF({...f,date:e.target.value})}/></Lb>
+<Lb t="Cor 1"><input type="color" className="in h-9" value={f.c1} onChange={e=>setF({...f,c1:e.target.value})}/></Lb><Lb t="Cor 2"><input type="color" className="in h-9" value={f.c2} onChange={e=>setF({...f,c2:e.target.value})}/></Lb></div>
+<Lb t="Imagem de fundo (URL)"><input className="in" value={f.img.startsWith('data:')?'(arquivo enviado)':f.img} onChange={e=>setF({...f,img:e.target.value})} placeholder="https://…"/></Lb>
+<input type="file" accept="image/*" className="text-xs mt-1" onChange={e=>{const fl=e.target.files[0];if(!fl)return;const rr=new FileReader();rr.onload=()=>setF(v=>({...v,img:rr.result}));rr.readAsDataURL(fl)}}/>
+<Lb t="Partículas"><select className="in" value={f.p} onChange={e=>setF({...f,p:e.target.value})}>{Object.entries(PL).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select></Lb>
+<div className="text-xs opacity-80 mt-2">Acessórios do tema:</div><div className="flex flex-wrap gap-1 mt-1">{Object.entries(ACCS).map(([i,a])=><button key={i} className={'chip '+(f.acc.includes(i)?'on':'')} onClick={()=>setF({...f,acc:tg(f.acc,i)})}>{a.n}</button>)}</div>
+<button className="chip on mt-3 w-full" onClick={mkT}>Criar e aplicar tema</button>
+{cT.length>0&&<div className="mt-3 flex flex-wrap gap-1.5">{cT.map(t=><span key={t.k} className="chip">{t.n} <button onClick={()=>setCT(cT.filter(x=>x!==t))}>✕</button></span>)}</div>}</div>}
+{tab===2&&<div>
+<div className="text-xs opacity-80">Acessórios em “{T.n}” (toque para ligar/desligar):</div><div className="flex flex-wrap gap-1 mt-1">{Object.entries(ACCS).map(([i,a])=><button key={i} className={'chip '+(list.includes(i)?'on':'')} onClick={()=>setOv({...ov,[tk]:tg(ov[tk]||T.acc,i)})}>{a.n}</button>)}</div>
+<div className="text-xs opacity-80 mt-4">Criar acessório personalizado:</div>
+<div className="relative h-14 w-16 mx-auto mt-10"><Acc d={g}/></div>
+<Lb t="Nome"><input className="in" value={g.n} onChange={e=>setG({...g,n:e.target.value})}/></Lb>
+<div className="grid grid-cols-3 gap-2"><Lb t="Forma"><select className="in" value={g.s} onChange={e=>setG({...g,s:e.target.value})}>{Object.entries(SH).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select></Lb><Lb t="Cor 1"><input type="color" className="in h-9" value={g.a} onChange={e=>setG({...g,a:e.target.value})}/></Lb><Lb t="Cor 2"><input type="color" className="in h-9" value={g.b} onChange={e=>setG({...g,b:e.target.value})}/></Lb></div>
+<Lb t="Emoji / emblema"><input className="in" value={g.e} onChange={e=>setG({...g,e:e.target.value})} maxLength="4"/></Lb>
+<button className="chip on mt-3 w-full" onClick={mkA}>Criar e aplicar neste tema</button></div>}
+</aside></></main>}
+ReactDOM.createRoot(document.getElementById('r')).render(<App/>);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
